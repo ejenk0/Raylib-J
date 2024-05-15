@@ -9,3 +9,5 @@ META-INF/
 *.txt
 .gradle/
 build/
+.venv/
+.DS_STORE
