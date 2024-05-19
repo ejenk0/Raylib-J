@@ -6,10 +6,7 @@ import com.raylib.java.core.input.Input;
 import com.raylib.java.core.ray.Ray;
 import com.raylib.java.core.rcamera.Camera2D;
 import com.raylib.java.core.rcamera.Camera3D;
-import com.raylib.java.raymath.Matrix;
-import com.raylib.java.raymath.Quaternion;
-import com.raylib.java.raymath.Vector2;
-import com.raylib.java.raymath.Vector3;
+import com.raylib.java.raymath.*;
 import com.raylib.java.rlgl.RLGL;
 import com.raylib.java.rlgl.shader.Shader;
 import com.raylib.java.rlgl.vr.VrDeviceInfo;
@@ -338,7 +335,10 @@ public class rCore{
     public void ToggleFullscreen(){
         if (!window.fullscreen){
             // Store previous window position (in case we exit fullscreen)
-            glfwGetWindowPos(window.handle, new int[]{(int) window.position.x}, new int[]{(int) window.position.y});
+            Vector2 windowPositionVector = GetWindowPosition();
+            window.position.setX(windowPositionVector.getX());
+            window.position.setY(windowPositionVector.getY());
+
 
             int monitorCount;
             PointerBuffer monitors = glfwGetMonitors();
@@ -381,20 +381,22 @@ public class rCore{
      * Toggle borderless windowed mode (only PLATFORM_DESKTOP)
      */
     public void ToggleBorderlessWindowed() {
-        boolean wasOnFullscreen = false;
 
+        boolean wasOnFullscreen = false;
         if (window.fullscreen) {
-            window.previousPosition = window.position;
+            window.previousPosition.setX(window.position.getX());
+            window.previousPosition.setY(window.position.getY());
             ToggleFullscreen();
             wasOnFullscreen = true;
         }
 
+        int monitorCount;
         PointerBuffer monitors = glfwGetMonitors();
-        int monitorCount = monitors.sizeof();
+        monitorCount = monitors.sizeof();
         int monitorIndex = GetCurrentMonitor();
-        long monitor = monitorIndex < monitorCount ? monitors.get(monitorIndex) : -1;
+        long monitor = (monitorIndex < monitorCount) ? monitors.get(monitorIndex) : -1;
 
-        if ((monitor >= 0) && (monitor < monitorCount)) {
+        if ((monitorIndex >= 0) && (monitorIndex < monitorCount)){
             GLFWVidMode mode = glfwGetVideoMode(monitor);
             if (mode != null) {
                 if (!IsWindowState(FLAG_BORDERLESS_WINDOWED_MODE)) {
@@ -402,9 +404,13 @@ public class rCore{
                     // NOTE: If it was on fullscreen, screen position was already stored, so skip
                     // setting it here
                     if (!wasOnFullscreen) {
-                        glfwGetWindowPos(window.handle, new int[]{(int) window.previousPosition.x}, new int[]{(int) window.previousPosition.y});
+                        Vector2 windowPositionVector = GetWindowPosition();
+                        window.previousPosition.setX(windowPositionVector.getX());
+                        window.previousPosition.setY(windowPositionVector.getY());
                     }
-                    window.previousScreen = window.screen;
+
+                    window.previousScreen.setWidth(window.screen.getWidth());
+                    window.previousScreen.setHeight(window.screen.getHeight());
 
                     // Set undecorated and topmost modes and flags
                     glfwSetWindowAttrib(window.handle, GLFW_DECORATED, GLFW_FALSE);
@@ -996,8 +1002,9 @@ public class rCore{
         }
         return 0;
     }
-
-    int GetMonitorRefreshRate(int monitor) {
+  
+    // Get selected monitor refresh rate
+    public int GetMonitorRefreshRate(int monitor) {
         if (PLATFORM_DESKTOP) {
             PointerBuffer monitors = glfwGetMonitors();
             int monitorCount = monitors.sizeof();
